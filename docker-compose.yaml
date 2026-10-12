@@ -94,6 +94,13 @@ x-spark-common:
   image: my-spark-image:latest
   build: ./spark
   restart: always
+  environment:
+    AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+    AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+    AWS_REGION: us-east-1
+  volumes:
+    - ./spark/conf/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:ro
+
 
 services:
   postgres:
