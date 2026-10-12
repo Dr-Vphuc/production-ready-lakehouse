@@ -311,5 +311,94 @@ services:
     depends_on:
       <<: *airflow-common-depends-on
 
+    # ---------- MinIO: tầng lưu trữ (S3) ----------
+  minio:
+    image: pgsty/minio:RELEASE.2026-08-04T00-00-00Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # Web console
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+  # Chạy một lần để tạo bucket rồi thoát (giống airflow-init)
+  minio-init:
+    image: pgsty/minio:RELEASE.2026-08-04T00-00-00Z   # image này có sẵn lệnh mc
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        mc alias set lake http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"
+        mc mb --ignore-existing lake/lakehouse
+    restart: "no"
+
+  # ---------- Postgres riêng cho Nessie ----------
+  nessie-db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${NESSIE_DB_USER}
+      POSTGRES_PASSWORD: ${NESSIE_DB_PASSWORD}
+      POSTGRES_DB: nessie
+    volumes:
+      - nessie-db-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${NESSIE_DB_USER}", "-d", "nessie"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    restart: always
+
+  # ---------- Nessie: Iceberg catalog ----------
+  nessie:
+    image: ghcr.io/projectnessie/nessie:0.108.8
+    depends_on:
+      nessie-db:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    ports:
+      - "19120:19120"   # API + Web UI
+    environment:
+      # (1) Version store: lưu commit/con trỏ vào Postgres thay vì RAM
+      nessie.version.store.type: JDBC2
+      nessie.version.store.persist.jdbc.datasource: postgresql
+      quarkus.datasource.postgresql.jdbc.url: jdbc:postgresql://nessie-db:5432/nessie
+      quarkus.datasource.postgresql.username: ${NESSIE_DB_USER}
+      quarkus.datasource.postgresql.password: ${NESSIE_DB_PASSWORD}
+      # (2) Warehouse: bảng Iceberg mới được đặt dưới s3://lakehouse/
+      nessie.catalog.default-warehouse: lakehouse
+      nessie.catalog.warehouses.lakehouse.location: s3://lakehouse/
+      # (3) Cách Nessie kết nối tới MinIO
+      nessie.catalog.service.s3.default-options.endpoint: http://minio:9000/
+      nessie.catalog.service.s3.default-options.path-style-access: "true"
+      nessie.catalog.service.s3.default-options.region: us-east-1
+      nessie.catalog.service.s3.default-options.access-key: urn:nessie-secret:quarkus:nessie.catalog.secrets.access-key
+      nessie.catalog.secrets.access-key.name: ${MINIO_ROOT_USER}
+      nessie.catalog.secrets.access-key.secret: ${MINIO_ROOT_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000 && printf 'GET /q/health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '200 OK' <&3"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: always
+
 volumes:
   postgres-db-volume:
+  minio-data:
+  nessie-db-volume:
