@@ -1,3 +1,10 @@
 # Airflow logs
 /logs/*
 !/logs/.gitkeep
+
+# venv
+.venv/
+
+# secrets
+.env
+config/airflow.cfg
