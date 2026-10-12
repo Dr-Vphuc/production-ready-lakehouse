@@ -7,3 +7,6 @@
 
 # secrets
 .env
+
+#data
+archive/
