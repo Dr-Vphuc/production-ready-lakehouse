@@ -7,4 +7,3 @@
 
 # secrets
 .env
-config/airflow.cfg
