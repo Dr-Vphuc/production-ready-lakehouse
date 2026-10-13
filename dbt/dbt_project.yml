@@ -1,0 +1,11 @@
+name: lakehouse
+version: "0.1.0"
+config-version: 2
+profile: lakehouse
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+
+models:
+  lakehouse:
+    +file_format: iceberg

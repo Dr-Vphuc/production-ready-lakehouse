@@ -10,3 +10,8 @@
 
 #data
 archive/
+
+# dbt
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
