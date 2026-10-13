@@ -440,6 +440,30 @@ services:
       spark-master:
         condition: service_healthy
 
+  spark-thrift:
+    <<: *spark-common
+    command: >
+      /opt/spark/bin/spark-submit
+      --class org.apache.spark.sql.hive.thriftserver.HiveThriftServer2
+      --name spark-thrift
+      --master spark://spark-master:7077
+      --conf spark.executor.cores=2
+      --conf spark.cores.max=2
+    ports:
+      - "10000:10000"   # JDBC/Thrift: dbt, beeline, DBeaver kết nối vào đây
+      - "4040:4040"     # Spark UI của chính thrift server (driver)
+    depends_on:
+      spark-master:
+        condition: service_healthy
+      nessie:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/10000"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
 volumes:
   postgres-db-volume:
   minio-data:
