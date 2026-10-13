@@ -92,7 +92,9 @@ x-airflow-common:
 x-spark-common:
   &spark-common
   image: my-spark-image:latest
-  build: ./spark
+  build: 
+    context: ./spark
+    target: runtime
   restart: always
   environment:
     AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
@@ -464,6 +466,28 @@ services:
       timeout: 5s
       retries: 10
       start_period: 30s
+
+  spark-ingest:
+    <<: *spark-common
+    image: my-spark-jobs:latest
+    build:
+      context: ./spark
+      target: jobs
+    restart: "no"
+    profiles: ["jobs"]
+    entrypoint: >
+      /opt/spark/bin/spark-submit
+      --class lakehouse.IngestEvents
+      --name ingest-events
+      --master spark://spark-master:7077
+      --conf spark.executor.cores=2
+      --conf spark.cores.max=2
+      /opt/spark/apps/lakehouse-jobs.jar
+    depends_on:
+      spark-master:
+        condition: service_healthy
+      nessie:
+        condition: service_healthy
 
 volumes:
   postgres-db-volume:
