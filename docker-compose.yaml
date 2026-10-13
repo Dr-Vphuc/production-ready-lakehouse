@@ -100,6 +100,7 @@ x-spark-common:
     AWS_REGION: us-east-1
   volumes:
     - ./spark/conf/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:ro
+    - ./archive:/data/archive:ro
 
 
 services:
