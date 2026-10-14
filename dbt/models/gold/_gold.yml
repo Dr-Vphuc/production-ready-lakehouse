@@ -1,0 +1,52 @@
+version: 2
+
+models:
+  - name: fct_orders
+    description: "Mỗi dòng là một đơn hàng: các purchase cùng user_session và cùng event_time"
+    columns:
+      - name: order_id
+        data_tests:
+          - unique
+          - not_null
+      - name: user_session
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('fct_sessions')
+                field: user_session
+      - name: unpriced_item_count
+        description: "Số món có giá âm ở nguồn (đã thành NULL ở silver), không tính vào revenue"
+
+  - name: fct_sessions
+    description: "Mỗi dòng là một phiên, kèm số sự kiện theo loại và cờ phễu"
+    columns:
+      - name: user_session
+        data_tests:
+          - unique
+          - not_null
+
+  - name: dim_products
+    description: "Mỗi dòng là một sản phẩm, thuộc tính lấy theo lần xuất hiện mới nhất (SCD type 1)"
+    columns:
+      - name: product_id
+        data_tests:
+          - unique
+          - not_null
+      - name: brand
+        description: "Brand khác NULL gần nhất; NULL nếu sản phẩm chưa từng có brand"
+      - name: last_price
+        description: "Giá khác NULL gần nhất; NULL nếu sản phẩm chỉ từng có giá âm"
+
+  - name: daily_kpis
+    description: "Mỗi dòng là một ngày (UTC). Không lấy trung bình các cột tỷ lệ qua nhiều ngày: cộng tử số và mẫu số rồi chia lại"
+    columns:
+      - name: event_date
+        data_tests:
+          - unique
+          - not_null
+      - name: active_users
+        description: "Số user khác nhau trong ngày; không cộng dồn qua nhiều ngày được"
+      - name: sessions
+        description: "Số phiên tính theo ngày bắt đầu phiên; không gồm sự kiện thiếu user_session"
+      - name: session_conversion_rate
+        description: "buying_sessions / sessions của riêng ngày đó"

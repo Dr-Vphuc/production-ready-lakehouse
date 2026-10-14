@@ -11,3 +11,6 @@ models:
     +file_format: iceberg
     silver:
       +schema: silver
+    gold:
+      +schema: gold
+      +materialized: table
