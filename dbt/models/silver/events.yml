@@ -1,0 +1,23 @@
+version: 2
+
+models:
+  - name: events
+    description: "Sự kiện đã khử trùng lặp; mỗi dòng là một tổ hợp giá trị duy nhất từ bronze.events"
+    columns:
+      - name: event_time
+        data_tests:
+          - not_null
+      - name: event_type
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['view', 'cart', 'remove_from_cart', 'purchase']
+      - name: product_id
+        data_tests:
+          - not_null
+      - name: user_id
+        data_tests:
+          - not_null
+      - name: source_row_count
+        description: "Số dòng giống hệt nhau ở bronze đã gộp thành dòng này"

@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: bronze
+    schema: bronze
+    tables:
+      - name: events
+        description: "Sự kiện thô từ CSV, nạp bởi job Scala IngestEvents"

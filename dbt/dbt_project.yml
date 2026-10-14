@@ -9,3 +9,5 @@ macro-paths: ["macros"]
 models:
   lakehouse:
     +file_format: iceberg
+    silver:
+      +schema: silver
