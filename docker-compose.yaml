@@ -309,6 +309,10 @@ services:
         echo "Files in shared volumes:"
         echo
         ls -la /opt/airflow/{logs,dags,plugins,config}
+        echo
+        echo "Creating Airflow pools:"
+        echo
+        /entrypoint airflow pools set dbt 1 "Moi luc chi mot lenh dbt chay (dung chung spark-thrift va cac bang gold)"
 
     # yamllint enable rule:line-length
     environment:
@@ -497,7 +501,101 @@ services:
       nessie:
         condition: service_healthy
 
+  # ---------- Realtime: Kafka (1 node KRaft, không cần ZooKeeper) ----------
+  kafka:
+    image: apache/kafka:4.3.1
+    profiles: ["realtime"]
+    environment:
+      CLUSTER_ID: 5kwX_TvZSrKCP72vjKLSyQ
+      # Node này vừa là broker (nhận/trả tin) vừa là controller (quản lý metadata)
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      # Chỉ có 1 broker nên các topic nội bộ chỉ giữ được 1 bản sao
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_SHARE_COORDINATOR_STATE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_SHARE_COORDINATOR_STATE_TOPIC_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_HEAP_OPTS: -Xms512m -Xmx512m
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+
+  # Chạy một lần để tạo topic rồi thoát (giống minio-init)
+  kafka-init:
+    image: apache/kafka:4.3.1
+    profiles: ["realtime"]
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 \
+          --create --if-not-exists --topic ecommerce.events \
+          --partitions 3 --replication-factor 1 \
+          --config retention.ms=604800000
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 \
+          --describe --topic ecommerce.events
+    restart: "no"
+
+  # Giả lập app thương mại điện tử: phát lại một file CSV vào Kafka theo nhịp event_time.
+  # Chạy tay: docker compose run --rm event-producer [--month 2020-Feb --speed 288 ...]
+  event-producer:
+    image: my-event-producer:latest
+    build: ./producer
+    profiles: ["jobs"]
+    command: ["--month", "2020-Feb", "--speed", "288"]
+    volumes:
+      - ./archive:/data/archive:ro
+    restart: "no"
+
+  # Job Structured Streaming: Kafka -> bronze.events, chạy liên tục.
+  # Chạy ở chế độ local[2] trong container này, không xin core của Spark cluster.
+  spark-streaming:
+    <<: *spark-common
+    image: my-spark-jobs:latest
+    build:
+      context: ./spark
+      target: jobs
+    profiles: ["realtime"]
+    restart: unless-stopped
+    entrypoint: >
+      /opt/spark/bin/spark-submit
+      --class lakehouse.StreamEvents
+      --name stream-events
+      --master local[2]
+      --driver-memory 1g
+      /opt/spark/apps/lakehouse-jobs.jar
+    volumes:
+      - ./spark/conf/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:ro
+      - spark-checkpoints:/opt/spark/checkpoints
+    ports:
+      - "4041:4040"   # Spark UI của job streaming (4040 đã dùng cho spark-thrift)
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+      nessie:
+        condition: service_healthy
+
 volumes:
   postgres-db-volume:
   minio-data:
   nessie-db-volume:
+  kafka-data:
+  spark-checkpoints:

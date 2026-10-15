@@ -12,6 +12,9 @@ Mỗi run xử lý đúng một tháng (lấy từ data_interval_start) qua 3 b�
    dim_products, daily_kpis) rồi chạy test.
 
 Chạy lại bước nào cũng cho cùng kết quả, nên retry an toàn.
+
+Batch chỉ phụ trách các tháng đã đóng (10/2019 -> 01/2020). Tháng 02/2020 do job streaming
+nạp từ Kafka, nên DAG này không được ghi vào partition tháng đó.
 """
 
 import os
@@ -36,9 +39,9 @@ with DAG(
     # Mỗi tháng một run. Run của tháng 10 có khoảng dữ liệu [01/10, 01/11)
     # và chỉ chạy sau khi tháng 10 kết thúc.
     schedule=CronDataIntervalTimetable("0 0 1 * *", timezone="UTC"),
-    # Dữ liệu chỉ có từ 10/2019 đến 02/2020, tức đúng 5 run.
+    # Batch phụ trách 10/2019 -> 01/2020, tức 4 run. Tháng 02/2020 thuộc về streaming.
     start_date=pendulum.datetime(2019, 10, 1, tz="UTC"),
-    end_date=pendulum.datetime(2020, 2, 1, tz="UTC"),
+    end_date=pendulum.datetime(2020, 1, 1, tz="UTC"),
     # Chạy bù các tháng trong quá khứ (Airflow 3 mặc định tắt).
     catchup=True,
     # Chạy lần lượt từng tháng: Spark có ít core, và mỗi run ghi đè toàn bộ gold.
@@ -109,6 +112,8 @@ with DAG(
         # Giữ lại các biến môi trường sẵn có (PATH, ...) để vẫn gọi được lệnh dbt.
         append_env=True,
         cwd=DBT_DIR,
+        # Pool 1 slot dùng chung với các DAG khác: không có hai lệnh dbt chạy cùng lúc.
+        pool="dbt",
     )
 
     # Bước 3: dbt build lại toàn bộ model gold rồi chạy test
@@ -117,6 +122,7 @@ with DAG(
         task_id="dbt_gold",
         bash_command="dbt build --select path:models/gold",
         cwd=DBT_DIR,
+        pool="dbt",
     )
 
     # Thứ tự chạy: bronze -> silver -> gold.
