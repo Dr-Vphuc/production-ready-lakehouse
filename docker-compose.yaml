@@ -105,6 +105,18 @@ x-spark-common:
     - ./spark/conf/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:ro
     - ./archive:/data/archive:ro
 
+x-superset-common:
+  &superset-common
+  image: my-superset:latest
+  build: ./superset
+  environment:
+    &superset-common-env
+    # Khóa ký session và mã hóa mật khẩu kết nối DB lưu trong Superset
+    SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY}
+  volumes:
+    # Metadata của Superset (user, kết nối, dataset, chart, dashboard) nằm trong SQLite ở thư mục này
+    - superset-home:/app/superset_home
+
 
 services:
   postgres:
@@ -593,9 +605,166 @@ services:
       nessie:
         condition: service_healthy
 
+  # ---------- BI: ClickHouse đọc thẳng Iceberg (không chép dữ liệu) ----------
+  # ClickHouse đóng vai engine truy vấn cho BI (vai Trino trong sơ đồ gốc):
+  # hỏi Nessie xem bảng nằm ở file nào rồi tự đọc file Parquet từ MinIO.
+  # Nhờ vậy Superset không phải xếp hàng chung Spark Thrift với dbt.
+  clickhouse:
+    image: clickhouse/clickhouse-server:26.8.15.10
+    environment:
+      # Entrypoint của image xóa user `default` và tạo user quản trị này
+      CLICKHOUSE_USER: admin
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+      # Cho admin quyền quản lý user/quyền bằng SQL (CREATE USER, GRANT) để clickhouse-init dùng
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    ports:
+      # HTTP: Superset kết nối qua cổng này; mở http://localhost:8123/play để chạy SQL bằng trình duyệt.
+      # Cổng native 9000 không mở ra máy host vì trùng cổng S3 của MinIO.
+      - "8123:8123"
+    volumes:
+      # Lưu user, quyền, khai báo database (và bảng riêng của ClickHouse nếu sau này cần)
+      - clickhouse-data:/var/lib/clickhouse
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    # ClickHouse tự giới hạn RAM ở khoảng 90% con số này
+    mem_limit: 2g
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8123/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: always
+
+  # Chạy một lần (giống minio-init): khai báo catalog Nessie và tạo user chỉ đọc cho Superset.
+  clickhouse-init:
+    image: clickhouse/clickhouse-server:26.8.15.10
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+      nessie:
+        condition: service_healthy
+    environment:
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+      CLICKHOUSE_SUPERSET_PASSWORD: ${CLICKHOUSE_SUPERSET_PASSWORD}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        set -e
+        clickhouse-client --host clickhouse --user admin --password "$$CLICKHOUSE_PASSWORD" --multiquery <<SQL
+        -- Database engine DataLakeCatalog còn ở mức beta nên phải bật cờ này khi CREATE.
+        -- Server khởi động lại vẫn nạp database này bình thường, không cần bật lại.
+        SET allow_database_iceberg = 1;
+
+        -- Mỗi bảng trong catalog Nessie hiện thành một bảng của database lakehouse,
+        -- tên giữ cả namespace nên phải để trong backtick: lakehouse.\`gold.daily_kpis\`.
+        --   warehouse        : tên warehouse khai báo ở service nessie
+        --   storage_endpoint : MinIO + bucket chứa file của warehouse đó
+        --   vended_credentials = 0 : đừng lấy khóa S3 từ catalog. Nessie chỉ trả về cấu hình
+        --                      "remote signing" (không kèm khóa); nếu để mặc định, ClickHouse coi đó là
+        --                      khóa của catalog, bỏ qua aws_* bên dưới rồi báo lỗi ACCESS_DENIED.
+        --   aws_*            : khóa MinIO mà ClickHouse dùng để tự đọc file
+        -- IF NOT EXISTS: chạy lại không sao; muốn đổi khóa MinIO thì phải tạo lại database này.
+        CREATE DATABASE IF NOT EXISTS lakehouse
+        ENGINE = DataLakeCatalog('http://nessie:19120/iceberg')
+        SETTINGS catalog_type = 'rest',
+                 warehouse = 'lakehouse',
+                 storage_endpoint = 'http://minio:9000/lakehouse',
+                 vended_credentials = 0,
+                 aws_access_key_id = '$$MINIO_ROOT_USER',
+                 aws_secret_access_key = '$$MINIO_ROOT_PASSWORD';
+
+        -- User riêng cho Superset, có hai lớp chặn:
+        --   chỉ được cấp SELECT, nên không có quyền DROP/ALTER/INSERT;
+        --   readonly = 2 chặn mọi lệnh ghi và DDL, chỉ cho đọc và đổi setting của phiên.
+        -- Quan trọng vì DROP TABLE trong database lakehouse sẽ xóa luôn bảng thật trong Nessie.
+        CREATE USER OR REPLACE superset
+        IDENTIFIED BY '$$CLICKHOUSE_SUPERSET_PASSWORD'
+        SETTINGS readonly = 2;
+        GRANT SELECT ON *.* TO superset;
+        SQL
+        echo "Các bảng ClickHouse thấy trong catalog Nessie:"
+        clickhouse-client --host clickhouse --user admin --password "$$CLICKHOUSE_PASSWORD" \
+          --query "SHOW TABLES FROM lakehouse"
+    restart: "no"
+
+  # ---------- BI: Superset (dashboard) ----------
+  # Chạy một lần (giống airflow-init): tạo/nâng cấp metadata, tạo tài khoản admin,
+  # và ở lần đầu thì nạp dashboard dạng code trong superset/bundle/.
+  superset-init:
+    <<: *superset-common
+    depends_on:
+      clickhouse-init:
+        condition: service_completed_successfully
+    environment:
+      <<: *superset-common-env
+      SUPERSET_ADMIN_USERNAME: ${SUPERSET_ADMIN_USERNAME:-admin}
+      SUPERSET_ADMIN_PASSWORD: ${SUPERSET_ADMIN_PASSWORD:-admin}
+      CLICKHOUSE_SUPERSET_PASSWORD: ${CLICKHOUSE_SUPERSET_PASSWORD}
+    volumes:
+      - superset-home:/app/superset_home
+      - ./superset/bundle:/app/bundle:ro
+    command:
+      - /bin/bash
+      - -c
+      - |
+        set -e
+        # Tạo hoặc nâng cấp bảng metadata (SQLite trong volume superset-home)
+        superset db upgrade
+        # Đã có user này thì lệnh chỉ báo lỗi "already exists" và thoát bình thường
+        superset fab create-admin \
+          --username "$$SUPERSET_ADMIN_USERNAME" --password "$$SUPERSET_ADMIN_PASSWORD" \
+          --firstname Superset --lastname Admin --email admin@example.com
+        # Tạo role và quyền mặc định
+        superset init
+
+        # Chỉ nạp bundle một lần, để không ghi đè những chỉnh sửa làm sau đó trên giao diện
+        MARKER=/app/superset_home/.lakehouse_bundle_imported
+        if [ -f "$$MARKER" ]; then
+          echo "Bundle đã được nạp trước đó, bỏ qua."
+          exit 0
+        fi
+
+        # Đóng các file YAML thành zip (thư mục gốc lakehouse/ theo đúng định dạng export của Superset)
+        # và thay chỗ giữ chỗ bằng mật khẩu thật lấy từ .env
+        python - <<'PY'
+        import os
+        import pathlib
+        import zipfile
+
+        src = pathlib.Path("/app/bundle")
+        password = os.environ["CLICKHOUSE_SUPERSET_PASSWORD"]
+        with zipfile.ZipFile("/tmp/lakehouse.zip", "w") as bundle:
+            for path in sorted(src.rglob("*.yaml")):
+                text = path.read_text(encoding="utf-8")
+                text = text.replace("__CLICKHOUSE_SUPERSET_PASSWORD__", password)
+                bundle.writestr(f"lakehouse/{path.relative_to(src).as_posix()}", text)
+        PY
+        superset import-dashboards -p /tmp/lakehouse.zip -u "$$SUPERSET_ADMIN_USERNAME"
+        rm /tmp/lakehouse.zip
+        touch "$$MARKER"
+    restart: "no"
+
+  superset:
+    <<: *superset-common
+    # Dùng lệnh mặc định của image: gunicorn phục vụ web ở cổng 8088 (healthcheck cũng có sẵn trong image)
+    ports:
+      - "8088:8088"
+    depends_on:
+      superset-init:
+        condition: service_completed_successfully
+    restart: always
+
 volumes:
   postgres-db-volume:
   minio-data:
   nessie-db-volume:
   kafka-data:
   spark-checkpoints:
+  clickhouse-data:
+  superset-home:
