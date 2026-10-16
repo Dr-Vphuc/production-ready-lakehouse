@@ -1,0 +1,26 @@
+# Big Number: tổng số đơn hàng (cộng cột orders của các ngày).
+slice_name: Số đơn
+description: SUM(orders) của gold.daily_kpis.
+viz_type: big_number_total
+dataset_uuid: 8ae110d8-0242-4009-a9a0-8f7bb402dd29
+uuid: feb8f34d-0488-40a0-8382-d0f0307538b9
+version: 1.0.0
+cache_timeout: null
+certified_by: null
+certification_details: null
+query_context: null
+params:
+  viz_type: big_number_total
+  metric: total_orders
+  adhoc_filters:
+  - clause: WHERE
+    comparator: No filter
+    expressionType: SIMPLE
+    operator: TEMPORAL_RANGE
+    subject: event_date
+  header_font_size: 0.4
+  subheader_font_size: 0.15
+  y_axis_format: ',d'
+  time_format: smart_date
+  annotation_layers: []
+  extra_form_data: {}

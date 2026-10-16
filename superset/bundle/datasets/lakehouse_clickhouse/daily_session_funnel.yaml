@@ -1,0 +1,53 @@
+# Dataset ảo (virtual) cho biểu đồ phễu.
+# Chart phễu cần mỗi bước là một dòng, còn daily_kpis để ba bước thành ba cột.
+# ARRAY JOIN của ClickHouse "xoay" mỗi dòng ngày thành 3 dòng (bước, số phiên); hai mảng
+# được ghép theo vị trí. Vẫn giữ event_date để lọc theo thời gian như các chart khác.
+# Tiền tố "1. 2. 3." giữ đúng thứ tự các bước khi hiển thị.
+table_name: daily_session_funnel
+schema: null
+catalog: null
+sql: |-
+  SELECT event_date, stage, n
+  FROM lakehouse.`gold.daily_kpis`
+  ARRAY JOIN
+      ['1. Phiên truy cập', '2. Có thêm vào giỏ', '3. Có mua hàng'] AS stage,
+      [sessions, cart_sessions, buying_sessions] AS n
+main_dttm_col: event_date
+description: Phễu phiên theo ngày, xoay từ gold.daily_kpis.
+default_endpoint: null
+offset: 0
+cache_timeout: null
+params: null
+template_params: null
+filter_select_enabled: true
+fetch_values_predicate: null
+extra: null
+normalize_columns: false
+always_filter_main_dttm: false
+uuid: 55bf7523-b18f-43d5-af46-1f143947398d
+database_uuid: ceafdd24-b2ba-43d0-a823-72e6787a1724
+version: 1.0.0
+metrics:
+- metric_name: total_sessions
+  verbose_name: Số phiên
+  expression: SUM(n)
+  d3format: ',d'
+columns:
+- column_name: event_date
+  verbose_name: Ngày
+  type: Nullable(Date32)
+  is_dttm: true
+  groupby: true
+  filterable: true
+- column_name: stage
+  verbose_name: Bước
+  type: String
+  is_dttm: false
+  groupby: true
+  filterable: true
+- column_name: n
+  verbose_name: Số phiên
+  type: Nullable(Int64)
+  is_dttm: false
+  groupby: true
+  filterable: true

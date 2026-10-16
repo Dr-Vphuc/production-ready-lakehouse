@@ -1,0 +1,184 @@
+# Dashboard tổng quan. Bố cục lưới 12 cột:
+#   dòng 1: 4 Big Number (mỗi ô rộng 3)
+#   dòng 2: doanh thu theo ngày (rộng 12)
+#   dòng 3: doanh thu theo tháng + phễu phiên (mỗi ô rộng 6)
+# Trong position, chart được nhận ra bằng uuid. chartId chỉ là số tạm trong file:
+# lúc import, Superset thay bằng id thật của chart vừa tạo.
+dashboard_title: Lakehouse – Tổng quan
+description: null
+css: ''
+slug: lakehouse-overview
+certified_by: ''
+certification_details: ''
+published: true
+uuid: c4d3e537-5fc6-463f-9346-1e9bdd505e6e
+version: 1.0.0
+metadata:
+  # Tự chạy lại mọi chart mỗi 300 giây. Khi realtime đang chạy, lakehouse_intraday build lại gold
+  # mỗi 15 phút, nên dashboard theo kịp mà không phải bấm refresh.
+  refresh_frequency: 300
+  timed_refresh_immune_slices: []
+  color_scheme: supersetColors
+  color_scheme_domain: []
+  label_colors: {}
+  map_label_colors: {}
+  shared_label_colors: []
+  cross_filters_enabled: false
+  chart_configuration: {}
+  global_chart_configuration: {}
+  native_filter_configuration: []
+  expanded_slices: {}
+  default_filters: '{}'
+position:
+  DASHBOARD_VERSION_KEY: v2
+  ROOT_ID:
+    id: ROOT_ID
+    type: ROOT
+    children:
+    - GRID_ID
+  GRID_ID:
+    id: GRID_ID
+    type: GRID
+    parents:
+    - ROOT_ID
+    children:
+    - ROW-kpi
+    - ROW-daily
+    - ROW-monthly
+  HEADER_ID:
+    id: HEADER_ID
+    type: HEADER
+    meta:
+      text: Lakehouse – Tổng quan
+  ROW-kpi:
+    id: ROW-kpi
+    type: ROW
+    meta:
+      background: BACKGROUND_TRANSPARENT
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    children:
+    - CHART-revenue
+    - CHART-orders
+    - CHART-conversion
+    - CHART-aov
+  ROW-daily:
+    id: ROW-daily
+    type: ROW
+    meta:
+      background: BACKGROUND_TRANSPARENT
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    children:
+    - CHART-daily-revenue
+  ROW-monthly:
+    id: ROW-monthly
+    type: ROW
+    meta:
+      background: BACKGROUND_TRANSPARENT
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    children:
+    - CHART-monthly-revenue
+    - CHART-funnel
+  CHART-revenue:
+    id: CHART-revenue
+    type: CHART
+    children: []
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-kpi
+    meta:
+      chartId: 1
+      uuid: 66649c20-b5f5-4663-b582-7ce2c56825a7
+      sliceName: Doanh thu
+      width: 3
+      height: 30
+  CHART-orders:
+    id: CHART-orders
+    type: CHART
+    children: []
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-kpi
+    meta:
+      chartId: 2
+      uuid: feb8f34d-0488-40a0-8382-d0f0307538b9
+      sliceName: Số đơn
+      width: 3
+      height: 30
+  CHART-conversion:
+    id: CHART-conversion
+    type: CHART
+    children: []
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-kpi
+    meta:
+      chartId: 3
+      uuid: 83fdb59f-4fcd-4cb1-beac-c327223a459a
+      sliceName: Tỉ lệ chuyển đổi phiên
+      width: 3
+      height: 30
+  CHART-aov:
+    id: CHART-aov
+    type: CHART
+    children: []
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-kpi
+    meta:
+      chartId: 4
+      uuid: 93e5f630-045a-4c44-a07d-72f958a142fb
+      sliceName: Giá trị đơn trung bình
+      width: 3
+      height: 30
+  CHART-daily-revenue:
+    id: CHART-daily-revenue
+    type: CHART
+    children: []
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-daily
+    meta:
+      chartId: 5
+      uuid: 1177bea6-c213-4929-bd43-98b69278cbdd
+      sliceName: Doanh thu theo ngày
+      width: 12
+      height: 50
+  CHART-monthly-revenue:
+    id: CHART-monthly-revenue
+    type: CHART
+    children: []
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-monthly
+    meta:
+      chartId: 6
+      uuid: b7633aa4-11ce-4acc-8742-2e1b252cb326
+      sliceName: Doanh thu theo tháng
+      width: 6
+      height: 50
+  CHART-funnel:
+    id: CHART-funnel
+    type: CHART
+    children: []
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-monthly
+    meta:
+      chartId: 7
+      uuid: d8645e27-517a-4c42-875c-0d0ede532ca2
+      sliceName: Phễu phiên
+      width: 6
+      height: 50

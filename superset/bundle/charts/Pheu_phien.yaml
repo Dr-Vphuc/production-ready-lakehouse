@@ -1,0 +1,39 @@
+# Biểu đồ phễu: phiên truy cập -> phiên có thêm vào giỏ -> phiên có mua.
+# Đọc dataset ảo daily_session_funnel (mỗi bước một dòng). Phần trăm tính so với bước đầu.
+slice_name: Phễu phiên
+description: sessions -> cart_sessions -> buying_sessions của gold.daily_kpis.
+viz_type: funnel
+dataset_uuid: 55bf7523-b18f-43d5-af46-1f143947398d
+uuid: d8645e27-517a-4c42-875c-0d0ede532ca2
+version: 1.0.0
+cache_timeout: null
+certified_by: null
+certification_details: null
+query_context: null
+params:
+  viz_type: funnel
+  groupby:
+  - stage
+  metric: total_sessions
+  adhoc_filters:
+  - clause: WHERE
+    comparator: No filter
+    expressionType: SIMPLE
+    operator: TEMPORAL_RANGE
+    subject: event_date
+  row_limit: 10
+  sort_by_metric: true
+  percent_calculation_type: first_step
+  color_scheme: supersetColors
+  show_labels: true
+  # Nhãn trên mỗi bước: 5 = tên bước + số phiên + phần trăm so với bước đầu
+  # (bước cuối chính là tỉ lệ chuyển đổi phiên)
+  label_type: 5
+  show_legend: true
+  legendOrientation: top
+  legendMargin: 50
+  number_format: SMART_NUMBER
+  show_tooltip_labels: true
+  tooltip_label_type: 5
+  annotation_layers: []
+  extra_form_data: {}

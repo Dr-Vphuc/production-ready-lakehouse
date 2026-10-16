@@ -1,0 +1,27 @@
+# Big Number: tỉ lệ phiên có mua = SUM(buying_sessions) / SUM(sessions).
+# Cộng tử số và mẫu số trước rồi mới chia, không lấy trung bình tỉ lệ của từng ngày.
+slice_name: Tỉ lệ chuyển đổi phiên
+description: SUM(buying_sessions) / SUM(sessions) của gold.daily_kpis.
+viz_type: big_number_total
+dataset_uuid: 8ae110d8-0242-4009-a9a0-8f7bb402dd29
+uuid: 83fdb59f-4fcd-4cb1-beac-c327223a459a
+version: 1.0.0
+cache_timeout: null
+certified_by: null
+certification_details: null
+query_context: null
+params:
+  viz_type: big_number_total
+  metric: conversion_rate
+  adhoc_filters:
+  - clause: WHERE
+    comparator: No filter
+    expressionType: SIMPLE
+    operator: TEMPORAL_RANGE
+    subject: event_date
+  header_font_size: 0.4
+  subheader_font_size: 0.15
+  y_axis_format: '.2%'
+  time_format: smart_date
+  annotation_layers: []
+  extra_form_data: {}

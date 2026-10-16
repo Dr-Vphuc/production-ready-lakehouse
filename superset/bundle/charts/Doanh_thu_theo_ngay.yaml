@@ -1,0 +1,45 @@
+# Biểu đồ đường: doanh thu từng ngày.
+# x_axis là cột thời gian, time_grain_sqla = P1D gom theo ngày (ClickHouse: toStartOfDay).
+slice_name: Doanh thu theo ngày
+description: SUM(revenue) theo event_date.
+viz_type: echarts_timeseries_line
+dataset_uuid: 8ae110d8-0242-4009-a9a0-8f7bb402dd29
+uuid: 1177bea6-c213-4929-bd43-98b69278cbdd
+version: 1.0.0
+cache_timeout: null
+certified_by: null
+certification_details: null
+query_context: null
+params:
+  viz_type: echarts_timeseries_line
+  x_axis: event_date
+  time_grain_sqla: P1D
+  metrics:
+  - total_revenue
+  groupby: []
+  adhoc_filters:
+  - clause: WHERE
+    comparator: No filter
+    expressionType: SIMPLE
+    operator: TEMPORAL_RANGE
+    subject: event_date
+  row_limit: 10000
+  order_desc: true
+  color_scheme: supersetColors
+  seriesType: line
+  show_legend: false
+  rich_tooltip: true
+  markerEnabled: false
+  # Không bật zoom: zoom của ECharts bắt luôn thao tác lăn chuột, làm trang dashboard khó cuộn
+  zoomable: false
+  x_axis_sort_asc: true
+  x_axis_time_format: smart_date
+  tooltipTimeFormat: '%Y-%m-%d'
+  y_axis_format: SMART_NUMBER
+  y_axis_bounds:
+  - null
+  - null
+  truncateXAxis: true
+  truncate_metric: true
+  annotation_layers: []
+  extra_form_data: {}

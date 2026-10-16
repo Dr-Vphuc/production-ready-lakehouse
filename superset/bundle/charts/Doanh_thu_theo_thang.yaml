@@ -1,0 +1,43 @@
+# Biểu đồ cột: doanh thu từng tháng. time_grain_sqla = P1M gom theo tháng (ClickHouse: toStartOfMonth).
+# Tháng 2/2020 là phần do luồng realtime (Kafka -> Spark Streaming) nạp; các tháng trước do batch.
+slice_name: Doanh thu theo tháng
+description: SUM(revenue) theo tháng của event_date.
+viz_type: echarts_timeseries_bar
+dataset_uuid: 8ae110d8-0242-4009-a9a0-8f7bb402dd29
+uuid: b7633aa4-11ce-4acc-8742-2e1b252cb326
+version: 1.0.0
+cache_timeout: null
+certified_by: null
+certification_details: null
+query_context: null
+params:
+  viz_type: echarts_timeseries_bar
+  x_axis: event_date
+  time_grain_sqla: P1M
+  metrics:
+  - total_revenue
+  groupby: []
+  adhoc_filters:
+  - clause: WHERE
+    comparator: No filter
+    expressionType: SIMPLE
+    operator: TEMPORAL_RANGE
+    subject: event_date
+  row_limit: 10000
+  order_desc: true
+  color_scheme: supersetColors
+  orientation: vertical
+  show_legend: false
+  show_value: true
+  rich_tooltip: true
+  x_axis_sort_asc: true
+  x_axis_time_format: '%m/%Y'
+  tooltipTimeFormat: '%m/%Y'
+  y_axis_format: SMART_NUMBER
+  y_axis_bounds:
+  - null
+  - null
+  truncateXAxis: true
+  truncate_metric: true
+  annotation_layers: []
+  extra_form_data: {}

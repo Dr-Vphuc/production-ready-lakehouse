@@ -1,0 +1,122 @@
+# Dataset vật lý: bảng gold.daily_kpis (mỗi ngày một dòng), ClickHouse đọc thẳng từ Iceberg.
+# schema = database `lakehouse` của ClickHouse; table_name = tên bảng trong catalog Nessie,
+# gồm cả namespace nên có dấu chấm (Superset tự đặt trong backtick khi sinh SQL).
+table_name: gold.daily_kpis
+schema: lakehouse
+catalog: null
+main_dttm_col: event_date
+description: KPI theo ngày từ dbt model gold.daily_kpis (bảng Iceberg, đọc qua ClickHouse).
+default_endpoint: null
+offset: 0
+cache_timeout: null
+sql: null
+params: null
+template_params: null
+filter_select_enabled: true
+fetch_values_predicate: null
+extra: null
+normalize_columns: false
+always_filter_main_dttm: false
+uuid: 8ae110d8-0242-4009-a9a0-8f7bb402dd29
+database_uuid: ceafdd24-b2ba-43d0-a823-72e6787a1724
+version: 1.0.0
+
+# Metric dùng chung cho mọi chart của dataset này.
+# Các chỉ số dạng tỉ lệ luôn cộng tử số và mẫu số trên cả khoảng thời gian đang xem rồi mới chia,
+# không lấy trung bình các cột session_conversion_rate / avg_order_value theo ngày
+# (trung bình của tỉ lệ sẽ sai khi các ngày có số phiên, số đơn khác nhau), đúng như _gold.yml dặn.
+metrics:
+- metric_name: total_revenue
+  verbose_name: Doanh thu
+  expression: SUM(revenue)
+  d3format: ',.2f'
+  description: Tổng giá trị các sản phẩm đã mua.
+- metric_name: total_orders
+  verbose_name: Số đơn
+  expression: SUM(orders)
+  d3format: ',d'
+  description: Một đơn = các sự kiện purchase cùng user_session và cùng event_time.
+- metric_name: conversion_rate
+  verbose_name: Tỉ lệ chuyển đổi phiên
+  expression: SUM(buying_sessions) / SUM(sessions)
+  d3format: '.2%'
+  description: Số phiên có mua / tổng số phiên.
+- metric_name: aov
+  verbose_name: Giá trị đơn trung bình
+  expression: SUM(revenue) / SUM(orders)
+  d3format: ',.2f'
+  description: Doanh thu / số đơn.
+
+# Khai báo sẵn cột và kiểu (theo DESCRIBE của ClickHouse) để import không cần hỏi lại nguồn.
+columns:
+- column_name: event_date
+  verbose_name: Ngày
+  type: Nullable(Date32)
+  is_dttm: true
+  groupby: true
+  filterable: true
+- column_name: view_count
+  type: Nullable(Int64)
+  is_dttm: false
+  groupby: true
+  filterable: true
+- column_name: cart_count
+  type: Nullable(Int64)
+  is_dttm: false
+  groupby: true
+  filterable: true
+- column_name: remove_count
+  type: Nullable(Int64)
+  is_dttm: false
+  groupby: true
+  filterable: true
+- column_name: active_users
+  type: Nullable(Int64)
+  is_dttm: false
+  groupby: true
+  filterable: true
+- column_name: sessions
+  type: Nullable(Int64)
+  is_dttm: false
+  groupby: true
+  filterable: true
+- column_name: cart_sessions
+  type: Nullable(Int64)
+  is_dttm: false
+  groupby: true
+  filterable: true
+- column_name: buying_sessions
+  type: Nullable(Int64)
+  is_dttm: false
+  groupby: true
+  filterable: true
+- column_name: session_conversion_rate
+  type: Nullable(Float64)
+  is_dttm: false
+  groupby: true
+  filterable: true
+- column_name: orders
+  type: Nullable(Int64)
+  is_dttm: false
+  groupby: true
+  filterable: true
+- column_name: buyers
+  type: Nullable(Int64)
+  is_dttm: false
+  groupby: true
+  filterable: true
+- column_name: items_sold
+  type: Nullable(Int64)
+  is_dttm: false
+  groupby: true
+  filterable: true
+- column_name: revenue
+  type: Nullable(Decimal(30, 2))
+  is_dttm: false
+  groupby: true
+  filterable: true
+- column_name: avg_order_value
+  type: Nullable(Decimal(31, 2))
+  is_dttm: false
+  groupby: true
+  filterable: true

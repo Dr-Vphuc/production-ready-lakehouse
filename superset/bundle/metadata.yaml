@@ -1,0 +1,10 @@
+# Bundle "dashboard dạng code" theo định dạng export/import v1 của Superset.
+# superset-init đóng cả thư mục bundle/ thành file zip rồi chạy `superset import-dashboards`
+# (chỉ ở lần khởi tạo đầu tiên). Superset nối các đối tượng với nhau bằng uuid:
+#   databases/  kết nối tới ClickHouse
+#   datasets/   bảng/truy vấn mà chart đọc, kèm các metric dùng chung
+#   charts/     từng biểu đồ, trỏ tới dataset qua dataset_uuid
+#   dashboards/ bố cục, trỏ tới chart qua uuid trong position
+version: 1.0.0
+type: Dashboard
+timestamp: '2026-10-16T00:00:00+00:00'

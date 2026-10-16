@@ -1,0 +1,21 @@
+# Kết nối Superset -> ClickHouse (driver clickhouse-connect, giao thức HTTP cổng 8123).
+# - Đăng nhập bằng user `superset` do clickhouse-init tạo: chỉ có quyền SELECT và readonly.
+# - __CLICKHOUSE_SUPERSET_PASSWORD__ chỉ là chỗ giữ chỗ: superset-init thay bằng giá trị trong .env
+#   lúc import, nên mật khẩu thật không nằm trong repo. Superset lưu mật khẩu đã mã hóa bằng SUPERSET_SECRET_KEY.
+# - Database mặc định là `default`. Các bảng Iceberg nằm trong database `lakehouse` của ClickHouse
+#   (Superset gọi là schema `lakehouse`), tên bảng có dạng lakehouse.`gold.daily_kpis`.
+database_name: Lakehouse (ClickHouse)
+sqlalchemy_uri: clickhousedb://superset:__CLICKHOUSE_SUPERSET_PASSWORD__@clickhouse:8123/default
+cache_timeout: null
+expose_in_sqllab: true
+allow_run_async: false
+allow_ctas: false
+allow_cvas: false
+# Không cho chạy INSERT/UPDATE/DDL từ SQL Lab. Đây là lớp chặn thứ ba, sau quyền SELECT và readonly
+# của user ClickHouse.
+allow_dml: false
+allow_csv_upload: false
+extra:
+  allows_virtual_table_explore: true
+uuid: ceafdd24-b2ba-43d0-a823-72e6787a1724
+version: 1.0.0

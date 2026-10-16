@@ -1,0 +1,27 @@
+# Big Number: giá trị đơn trung bình (AOV) = SUM(revenue) / SUM(orders).
+# Cộng tử số và mẫu số trước rồi mới chia, không lấy trung bình cột avg_order_value theo ngày.
+slice_name: Giá trị đơn trung bình
+description: SUM(revenue) / SUM(orders) của gold.daily_kpis.
+viz_type: big_number_total
+dataset_uuid: 8ae110d8-0242-4009-a9a0-8f7bb402dd29
+uuid: 93e5f630-045a-4c44-a07d-72f958a142fb
+version: 1.0.0
+cache_timeout: null
+certified_by: null
+certification_details: null
+query_context: null
+params:
+  viz_type: big_number_total
+  metric: aov
+  adhoc_filters:
+  - clause: WHERE
+    comparator: No filter
+    expressionType: SIMPLE
+    operator: TEMPORAL_RANGE
+    subject: event_date
+  header_font_size: 0.4
+  subheader_font_size: 0.15
+  y_axis_format: ',.2f'
+  time_format: smart_date
+  annotation_layers: []
+  extra_form_data: {}
