@@ -141,6 +141,10 @@ def main():
                     last_report = now
     except KeyboardInterrupt:
         print("Dừng theo yêu cầu, đang gửi nốt các tin còn chờ...")
+    except OSError as exc:
+        # Ví dụ máy sleep làm mất thư mục mount: vẫn gửi nốt và in điểm chạy tiếp
+        print(f"Lỗi đọc file ({exc}), đang gửi nốt các tin còn chờ...", file=sys.stderr)
+
 
     remaining = producer.flush(60)
     delivered = stats["delivered"]
