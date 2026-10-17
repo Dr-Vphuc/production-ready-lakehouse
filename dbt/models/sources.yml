@@ -6,3 +6,14 @@ sources:
     tables:
       - name: events
         description: "Sự kiện thô từ CSV, nạp bởi job Scala IngestEvents"
+        columns:
+          # Job batch và job streaming đều chỉ ghi dòng có event_time, và luôn điền _source_file, _ingested_at
+          - name: event_time
+            data_tests:
+              - not_null
+          - name: _source_file
+            data_tests:
+              - not_null
+          - name: _ingested_at
+            data_tests:
+              - not_null
