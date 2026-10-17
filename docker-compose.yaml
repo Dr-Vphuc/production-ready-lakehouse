@@ -638,7 +638,9 @@ services:
       start_period: 10s
     restart: always
 
-  # Chạy một lần (giống minio-init): khai báo catalog Nessie và tạo user chỉ đọc cho Superset.
+  # Chạy một lần (giống minio-init): khai báo catalog Nessie, tạo user chỉ đọc cho Superset
+  # và tạo nhánh realtime Kafka -> ClickHouse (database rt, xem clickhouse/rt.sql).
+  # Không cần chờ Kafka: Kafka table tự kết nối lại ở nền, Kafka chưa bật thì chỉ chưa có dữ liệu.
   clickhouse-init:
     image: clickhouse/clickhouse-server:26.8.15.10
     depends_on:
@@ -651,6 +653,8 @@ services:
       CLICKHOUSE_SUPERSET_PASSWORD: ${CLICKHOUSE_SUPERSET_PASSWORD}
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - ./clickhouse:/init:ro
     entrypoint: /bin/bash
     command:
       - -c
@@ -687,10 +691,22 @@ services:
         IDENTIFIED BY '$$CLICKHOUSE_SUPERSET_PASSWORD'
         SETTINGS readonly = 2;
         GRANT SELECT ON *.* TO superset;
+        -- Trừ Kafka table: SELECT thẳng vào nó sẽ chen vào consumer group và lấy mất tin của MV.
+        -- ClickHouse mặc định đã chặn, nhưng user readonly = 2 tự bật lại được bằng setting
+        -- stream_like_engine_allow_direct_select, nên chặn hẳn ở quyền. REVOKE được cả khi bảng chưa tạo.
+        -- Phải nằm ở đây vì CREATE USER OR REPLACE phía trên xóa mọi quyền cũ ở mỗi lần chạy.
+        REVOKE SELECT ON rt.events_queue FROM superset;
         SQL
         echo "Các bảng ClickHouse thấy trong catalog Nessie:"
         clickhouse-client --host clickhouse --user admin --password "$$CLICKHOUSE_PASSWORD" \
           --query "SHOW TABLES FROM lakehouse"
+
+        # Nhánh realtime: tạo database rt; MV đọc Kafka được tạo sau cùng và bắt đầu đọc topic ngay
+        clickhouse-client --host clickhouse --user admin --password "$$CLICKHOUSE_PASSWORD" \
+          --queries-file /init/rt.sql
+        echo "Các bảng của nhánh realtime:"
+        clickhouse-client --host clickhouse --user admin --password "$$CLICKHOUSE_PASSWORD" \
+          --query "SHOW TABLES FROM rt"
     restart: "no"
 
   # ---------- BI: Superset (dashboard) ----------
