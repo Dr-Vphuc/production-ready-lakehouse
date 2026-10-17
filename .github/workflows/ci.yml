@@ -39,8 +39,8 @@ jobs:
             -e MINIO_ROOT_PASSWORD=ci-password \
             apache/airflow:3.3.2 \
             python -c "
-          from airflow.models import DagBag
-          bag = DagBag('/opt/airflow/dags', include_examples=False)
+          from airflow.dag_processing.dagbag import DagBag
+          bag = DagBag('/opt/airflow/dags')
           print('DAG:', sorted(bag.dags))
           assert not bag.import_errors, bag.import_errors
           assert bag.dags, 'không tìm thấy DAG nào'

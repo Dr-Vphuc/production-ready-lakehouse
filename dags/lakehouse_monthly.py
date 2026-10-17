@@ -21,11 +21,10 @@ import os
 from datetime import timedelta
 
 import pendulum
-from docker.types import Mount
-
 from airflow.providers.docker.operators.docker import DockerOperator
 from airflow.providers.standard.operators.bash import BashOperator
 from airflow.sdk import DAG, CronDataIntervalTimetable
+from docker.types import Mount
 
 # Đường dẫn project trên máy host (lấy từ .env). Container do DockerOperator tạo
 # chạy song song với airflow-worker chứ không nằm bên trong, nên bind mount phải

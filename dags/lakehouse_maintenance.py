@@ -14,7 +14,6 @@ import os
 from datetime import timedelta
 
 import pendulum
-
 from airflow.providers.docker.operators.docker import DockerOperator
 from airflow.providers.standard.operators.bash import BashOperator
 from airflow.sdk import DAG

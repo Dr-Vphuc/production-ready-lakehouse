@@ -14,7 +14,6 @@ bản cũ chỉ được xoá khi lakehouse_maintenance chạy Nessie GC.
 from datetime import timedelta
 
 import pendulum
-
 from airflow.providers.standard.operators.bash import BashOperator
 from airflow.sdk import DAG
 
