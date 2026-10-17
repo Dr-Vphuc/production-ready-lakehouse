@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint Python (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/ruff-action@v3
+        with:
+          args: check dags producer
+
+  dags:
+    name: Import DAG Airflow
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Chạy trong đúng image Airflow của dự án nên không cần tự xử lý constraints.
+      # Các biến môi trường là giá trị giả: DAG chỉ đọc chúng lúc import.
+      - name: Parse DAG
+        run: |
+          docker run --rm \
+            -v "$PWD/dags:/opt/airflow/dags:ro" \
+            -e AIRFLOW__CORE__LOAD_EXAMPLES=false \
+            -e HOST_PROJECT_DIR=/tmp/project \
+            -e MINIO_ROOT_USER=ci \
+            -e MINIO_ROOT_PASSWORD=ci-password \
+            apache/airflow:3.3.2 \
+            python -c "
+          from airflow.models import DagBag
+          bag = DagBag('/opt/airflow/dags', include_examples=False)
+          print('DAG:', sorted(bag.dags))
+          assert not bag.import_errors, bag.import_errors
+          assert bag.dags, 'không tìm thấy DAG nào'
+          "
+
+  scala:
+    name: sbt compile
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: spark/jobs
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: sbt
+          cache-dependency-path: spark/jobs/build.sbt
+      - uses: sbt/setup-sbt@v1
+      - run: sbt compile
+
+  dbt:
+    name: dbt parse
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dbt
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      # dbt-spark[PyHive] kéo theo thư viện sasl cần header của libsasl2 để build.
+      - name: Cài thư viện hệ thống
+        run: sudo apt-get update && sudo apt-get install -y libsasl2-dev
+      - run: pip install -r ../requirements.txt
+      # parse chỉ đọc project, không kết nối tới Spark Thrift.
+      - run: dbt parse --profiles-dir .
