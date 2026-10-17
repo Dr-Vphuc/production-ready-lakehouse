@@ -47,7 +47,7 @@ jobs:
           "
 
   scala:
-    name: sbt compile
+    name: sbt test
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -61,7 +61,8 @@ jobs:
           cache: sbt
           cache-dependency-path: spark/jobs/build.sbt
       - uses: sbt/setup-sbt@v1
-      - run: sbt compile
+      # test chạy Spark local nên đã gồm cả bước biên dịch
+      - run: sbt test
 
   dbt:
     name: dbt parse

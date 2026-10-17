@@ -17,4 +17,9 @@ dbt/logs/
 dbt/dbt_packages/
 dbt/.user.yml
 
+# sbt
+spark/jobs/target/
+spark/jobs/project/target/
+spark/jobs/project/project/
+
 __pycache__/
