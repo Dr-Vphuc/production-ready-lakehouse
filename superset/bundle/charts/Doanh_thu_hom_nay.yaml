@@ -1,0 +1,27 @@
+# Big Number realtime: doanh thu của ngày mới nhất (đồng hồ phát lại), metric `revenue` của dataset rt_events_today.
+# Dataset đã tự giới hạn trong "hôm nay" nên bộ lọc thời gian để mặc định là không lọc.
+slice_name: Doanh thu hôm nay
+description: Tổng giá các sự kiện purchase trong ngày mới nhất của rt.events.
+viz_type: big_number_total
+dataset_uuid: 8e57fd57-659d-4399-9435-72e1f8a774c7
+uuid: e4fa1d9b-4d2c-4ad9-a92b-33a86e7d6736
+version: 1.0.0
+cache_timeout: null
+certified_by: null
+certification_details: null
+query_context: null
+params:
+  viz_type: big_number_total
+  metric: revenue
+  adhoc_filters:
+  - clause: WHERE
+    comparator: No filter
+    expressionType: SIMPLE
+    operator: TEMPORAL_RANGE
+    subject: event_time
+  header_font_size: 0.4
+  subheader_font_size: 0.15
+  y_axis_format: ',.2f'
+  time_format: smart_date
+  annotation_layers: []
+  extra_form_data: {}

@@ -1,0 +1,107 @@
+# Dataset ảo cho dashboard realtime: sự kiện "hôm nay" của rt.events (ClickHouse đọc thẳng từ Kafka).
+# "Hôm nay" theo đồng hồ phát lại = ngày của sự kiện mới nhất đã nhận, không dùng now():
+# dữ liệu năm 2020 được producer phát lại, now() sẽ luôn ra một ngày trống.
+# Làm sạch đúng luật của silver.events để số khớp gold.daily_kpis:
+#   DISTINCT trên 9 cột nghiệp vụ: bỏ dòng trùng có sẵn trong nguồn, và dòng trùng do Kafka engine
+#   giao at-least-once (hai bản của cùng một tin chỉ khác nhau ở kafka_* / ingested_at, nên không lấy các cột đó);
+#   price < 0 thành NULL.
+table_name: rt_events_today
+schema: null
+catalog: null
+sql: |-
+  SELECT event_time, event_type, product_id, category_id, category_code, brand,
+         if(price < 0, NULL, price) AS price, user_id, user_session
+  FROM (
+      SELECT DISTINCT event_time, event_type, product_id, category_id, category_code,
+                      brand, price, user_id, user_session
+      FROM rt.events
+      WHERE event_time >= (SELECT toStartOfDay(max(event_time)) FROM rt.events)
+  )
+main_dttm_col: event_time
+description: Sự kiện trong ngày mới nhất của rt.events (Kafka -> ClickHouse), đã khử trùng như silver.
+default_endpoint: null
+offset: 0
+cache_timeout: null
+params: null
+template_params: null
+filter_select_enabled: true
+fetch_values_predicate: null
+extra: null
+normalize_columns: false
+always_filter_main_dttm: false
+uuid: 8e57fd57-659d-4399-9435-72e1f8a774c7
+database_uuid: ceafdd24-b2ba-43d0-a823-72e6787a1724
+version: 1.0.0
+
+# Cùng định nghĩa với gold: đã đối chiếu từng con số với dòng cùng ngày của gold.daily_kpis.
+metrics:
+- metric_name: revenue
+  verbose_name: Doanh thu
+  expression: coalesce(sumIf(price, event_type = 'purchase'), 0)
+  d3format: ',.2f'
+  description: Tổng giá các sự kiện purchase.
+- metric_name: orders
+  verbose_name: Số đơn
+  expression: uniqExactIf((user_session, event_time), event_type = 'purchase')
+  d3format: ',d'
+  description: Một đơn = các sự kiện purchase cùng user_session và cùng event_time (như fct_orders).
+- metric_name: events
+  verbose_name: Sự kiện
+  expression: COUNT(*)
+  d3format: ',d'
+  description: Mọi loại sự kiện (view, cart, remove_from_cart, purchase).
+- metric_name: active_users
+  verbose_name: Người dùng hoạt động
+  expression: COUNT(DISTINCT user_id)
+  d3format: ',d'
+  description: Số user_id khác nhau có ít nhất một sự kiện.
+
+columns:
+- column_name: event_time
+  verbose_name: Thời điểm
+  type: DateTime('UTC')
+  is_dttm: true
+  groupby: true
+  filterable: true
+- column_name: event_type
+  verbose_name: Loại sự kiện
+  type: LowCardinality(String)
+  is_dttm: false
+  groupby: true
+  filterable: true
+- column_name: product_id
+  type: Int64
+  is_dttm: false
+  groupby: true
+  filterable: true
+- column_name: category_id
+  type: Nullable(Int64)
+  is_dttm: false
+  groupby: true
+  filterable: true
+- column_name: category_code
+  type: LowCardinality(Nullable(String))
+  is_dttm: false
+  groupby: true
+  filterable: true
+- column_name: brand
+  verbose_name: Thương hiệu
+  type: LowCardinality(Nullable(String))
+  is_dttm: false
+  groupby: true
+  filterable: true
+- column_name: price
+  type: Nullable(Decimal(10, 2))
+  is_dttm: false
+  groupby: false
+  filterable: true
+- column_name: user_id
+  type: Int64
+  is_dttm: false
+  groupby: true
+  filterable: true
+- column_name: user_session
+  type: Nullable(String)
+  is_dttm: false
+  groupby: true
+  filterable: true

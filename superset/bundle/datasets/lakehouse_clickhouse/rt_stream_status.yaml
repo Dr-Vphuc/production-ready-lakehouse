@@ -1,0 +1,69 @@
+# Dataset ảo: tình trạng nhánh Kafka -> ClickHouse, mỗi chỉ số một dòng (Chỉ số | Giá trị) để bảng dễ đọc.
+# Tính một dòng tổng hợp rồi ARRAY JOIN "xoay" thành nhiều dòng (giống daily_session_funnel).
+# Mọi giá trị đổi sang chuỗi vì một cột chỉ có một kiểu.
+#   Đồng hồ phát lại : event_time mới nhất, cũng là ngày mà các chart "hôm nay" đang hiển thị
+#   Độ trễ           : ingested_at - kafka_timestamp = từ lúc producer gửi tới lúc ClickHouse ghi xong.
+#                      Ngay sau khi đọc bù tin cũ, con số này lớn vì tính cả thời gian tin nằm chờ trong Kafka.
+#   "5 phút qua"     : theo giờ thật (now()), không theo đồng hồ phát lại; không có tin mới thì ghi rõ.
+table_name: rt_stream_status
+schema: null
+catalog: null
+sql: |-
+  SELECT metric, value
+  FROM (
+      SELECT
+          max(event_time) AS replay_clock,
+          max(ingested_at) AS last_ingested_at,
+          countIf(ingested_at >= now64(3) - INTERVAL 5 MINUTE) AS rows_5m,
+          quantileIf(0.95)(dateDiff('millisecond', kafka_timestamp, ingested_at),
+                           ingested_at >= now64(3) - INTERVAL 5 MINUTE) AS p95_lag_ms_5m,
+          count() AS total_rows,
+          (SELECT count() FROM rt.events_rejected) AS rejected_rows
+      FROM rt.events
+  )
+  ARRAY JOIN
+      [
+          '1. Đồng hồ phát lại (event_time mới nhất)',
+          '2. Lần ghi gần nhất (giờ UTC)',
+          '3. Số tin nhận trong 5 phút qua',
+          '4. Độ trễ p95 Kafka → ClickHouse trong 5 phút qua (giây)',
+          '5. Tổng số dòng trong rt.events',
+          '6. Số tin lỗi trong rt.events_rejected'
+      ] AS metric,
+      [
+          toString(replay_clock),
+          toString(last_ingested_at),
+          toString(rows_5m),
+          if(rows_5m = 0, 'không có tin mới', toString(round(p95_lag_ms_5m / 1000, 2))),
+          toString(total_rows),
+          toString(rejected_rows)
+      ] AS value
+main_dttm_col: null
+description: Tình trạng luồng Kafka -> ClickHouse (rt.events), mỗi chỉ số một dòng.
+default_endpoint: null
+offset: 0
+cache_timeout: null
+params: null
+template_params: null
+filter_select_enabled: false
+fetch_values_predicate: null
+extra: null
+normalize_columns: false
+always_filter_main_dttm: false
+uuid: 8dceb214-971d-4514-a31f-0c55ca98682c
+database_uuid: ceafdd24-b2ba-43d0-a823-72e6787a1724
+version: 1.0.0
+metrics: []
+columns:
+- column_name: metric
+  verbose_name: Chỉ số
+  type: String
+  is_dttm: false
+  groupby: true
+  filterable: false
+- column_name: value
+  verbose_name: Giá trị
+  type: String
+  is_dttm: false
+  groupby: true
+  filterable: false

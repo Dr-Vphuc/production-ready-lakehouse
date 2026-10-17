@@ -1,0 +1,27 @@
+# Big Number realtime: số đơn của ngày mới nhất, metric `orders` của dataset rt_events_today
+# (một đơn = các sự kiện purchase cùng user_session và cùng event_time, như fct_orders).
+slice_name: Số đơn hôm nay
+description: Số đơn trong ngày mới nhất của rt.events.
+viz_type: big_number_total
+dataset_uuid: 8e57fd57-659d-4399-9435-72e1f8a774c7
+uuid: a4d19305-46eb-4c4a-a8ea-3bd8b421fee5
+version: 1.0.0
+cache_timeout: null
+certified_by: null
+certification_details: null
+query_context: null
+params:
+  viz_type: big_number_total
+  metric: orders
+  adhoc_filters:
+  - clause: WHERE
+    comparator: No filter
+    expressionType: SIMPLE
+    operator: TEMPORAL_RANGE
+    subject: event_time
+  header_font_size: 0.4
+  subheader_font_size: 0.15
+  y_axis_format: ',d'
+  time_format: smart_date
+  annotation_layers: []
+  extra_form_data: {}

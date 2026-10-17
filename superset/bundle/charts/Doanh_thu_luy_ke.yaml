@@ -1,0 +1,48 @@
+# Biểu đồ đường realtime: doanh thu cộng dồn trong ngày mới nhất, theo khung 10 phút.
+# ClickHouse trả doanh thu từng khung; rolling_type = cumsum để Superset cộng dồn sau khi nhận kết quả,
+# nên điểm cuối của đường bằng đúng Big Number "Doanh thu hôm nay".
+slice_name: Doanh thu lũy kế hôm nay
+description: Doanh thu cộng dồn theo khung 10 phút, ngày mới nhất của rt.events.
+viz_type: echarts_timeseries_line
+dataset_uuid: 8e57fd57-659d-4399-9435-72e1f8a774c7
+uuid: 7f000791-92c5-4cce-b90d-86b6d5324b70
+version: 1.0.0
+cache_timeout: null
+certified_by: null
+certification_details: null
+query_context: null
+params:
+  viz_type: echarts_timeseries_line
+  x_axis: event_time
+  time_grain_sqla: PT10M
+  metrics:
+  - revenue
+  groupby: []
+  rolling_type: cumsum
+  adhoc_filters:
+  - clause: WHERE
+    comparator: No filter
+    expressionType: SIMPLE
+    operator: TEMPORAL_RANGE
+    subject: event_time
+  row_limit: 10000
+  order_desc: true
+  color_scheme: supersetColors
+  seriesType: line
+  area: true
+  opacity: 0.2
+  show_legend: false
+  rich_tooltip: true
+  markerEnabled: false
+  zoomable: false
+  x_axis_sort_asc: true
+  x_axis_time_format: '%H:%M'
+  tooltipTimeFormat: '%Y-%m-%d %H:%M'
+  y_axis_format: SMART_NUMBER
+  y_axis_bounds:
+  - null
+  - null
+  truncateXAxis: true
+  truncate_metric: true
+  annotation_layers: []
+  extra_form_data: {}

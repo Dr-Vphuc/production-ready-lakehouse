@@ -1,0 +1,27 @@
+# Big Number realtime: số sự kiện (mọi loại) của ngày mới nhất, metric `events` của dataset rt_events_today.
+# Con số tăng dần theo từng lần refresh khi producer đang phát lại dữ liệu.
+slice_name: Sự kiện hôm nay
+description: Số sự kiện (view, cart, remove_from_cart, purchase) trong ngày mới nhất của rt.events.
+viz_type: big_number_total
+dataset_uuid: 8e57fd57-659d-4399-9435-72e1f8a774c7
+uuid: 66c0ec46-8360-4d06-8019-5cbd69d426a7
+version: 1.0.0
+cache_timeout: null
+certified_by: null
+certification_details: null
+query_context: null
+params:
+  viz_type: big_number_total
+  metric: events
+  adhoc_filters:
+  - clause: WHERE
+    comparator: No filter
+    expressionType: SIMPLE
+    operator: TEMPORAL_RANGE
+    subject: event_time
+  header_font_size: 0.4
+  subheader_font_size: 0.15
+  y_axis_format: ',d'
+  time_format: smart_date
+  annotation_layers: []
+  extra_form_data: {}

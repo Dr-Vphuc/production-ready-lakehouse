@@ -1,0 +1,33 @@
+# Bảng realtime: tình trạng luồng Kafka -> ClickHouse từ dataset rt_stream_status.
+# query_mode = raw: hiện nguyên các dòng của dataset (không gom nhóm), sắp theo tên chỉ số (đã đánh số 1. 2. ...).
+slice_name: Trạng thái luồng
+description: Đồng hồ phát lại, lần ghi gần nhất, lượng tin và độ trễ của nhánh Kafka -> ClickHouse.
+viz_type: table
+dataset_uuid: 8dceb214-971d-4514-a31f-0c55ca98682c
+uuid: cf459c6a-0b77-4c79-b23c-bc58037515df
+version: 1.0.0
+cache_timeout: null
+certified_by: null
+certification_details: null
+query_context: null
+params:
+  viz_type: table
+  query_mode: raw
+  all_columns:
+  - metric
+  - value
+  order_by_cols:
+  - '["metric", true]'
+  groupby: []
+  percent_metrics: []
+  adhoc_filters: []
+  row_limit: 100
+  order_desc: true
+  server_page_length: 10
+  include_search: false
+  show_cell_bars: false
+  allow_render_html: false
+  table_timestamp_format: smart_date
+  temporal_columns_lookup: {}
+  annotation_layers: []
+  extra_form_data: {}

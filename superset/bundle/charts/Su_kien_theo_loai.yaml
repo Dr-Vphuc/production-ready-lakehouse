@@ -1,0 +1,49 @@
+# Biểu đồ đường realtime: số sự kiện mỗi 10 phút trong ngày mới nhất, mỗi loại sự kiện một đường.
+# time_grain_sqla = PT10M: ClickHouse gom event_time về đầu khung 10 phút.
+# groupby = event_type tách thành nhiều đường (view, cart, remove_from_cart, purchase).
+slice_name: Sự kiện theo loại (10 phút)
+description: COUNT(*) theo khung 10 phút của event_time và theo event_type, ngày mới nhất của rt.events.
+viz_type: echarts_timeseries_line
+dataset_uuid: 8e57fd57-659d-4399-9435-72e1f8a774c7
+uuid: 8eb6a163-1e9c-4b02-b53d-1c11fb9543fc
+version: 1.0.0
+cache_timeout: null
+certified_by: null
+certification_details: null
+query_context: null
+params:
+  viz_type: echarts_timeseries_line
+  x_axis: event_time
+  time_grain_sqla: PT10M
+  metrics:
+  - events
+  groupby:
+  - event_type
+  adhoc_filters:
+  - clause: WHERE
+    comparator: No filter
+    expressionType: SIMPLE
+    operator: TEMPORAL_RANGE
+    subject: event_time
+  row_limit: 10000
+  order_desc: true
+  color_scheme: supersetColors
+  seriesType: line
+  show_legend: true
+  legendOrientation: top
+  legendType: scroll
+  rich_tooltip: true
+  markerEnabled: false
+  # Không bật zoom: zoom của ECharts bắt luôn thao tác lăn chuột, làm trang dashboard khó cuộn
+  zoomable: false
+  x_axis_sort_asc: true
+  x_axis_time_format: '%H:%M'
+  tooltipTimeFormat: '%Y-%m-%d %H:%M'
+  y_axis_format: SMART_NUMBER
+  y_axis_bounds:
+  - null
+  - null
+  truncateXAxis: true
+  truncate_metric: true
+  annotation_layers: []
+  extra_form_data: {}

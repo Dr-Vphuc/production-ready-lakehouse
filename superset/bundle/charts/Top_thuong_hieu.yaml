@@ -1,0 +1,48 @@
+# Biểu đồ cột realtime: 10 thương hiệu có doanh thu cao nhất trong ngày mới nhất.
+# x_axis là cột chữ (brand) thay vì cột thời gian, nên mỗi cột là một thương hiệu.
+# Superset sắp theo metric đầu tiên giảm dần (order_desc) rồi lấy row_limit = 10 dòng ngay trong SQL;
+# x_axis_sort giữ đúng thứ tự đó khi vẽ. Bỏ các sự kiện không ghi thương hiệu (brand rỗng).
+slice_name: Top 10 thương hiệu hôm nay
+description: Doanh thu theo brand trong ngày mới nhất của rt.events, 10 brand cao nhất.
+viz_type: echarts_timeseries_bar
+dataset_uuid: 8e57fd57-659d-4399-9435-72e1f8a774c7
+uuid: 6ce9654b-8024-4741-9adc-5c0ba3d4c78f
+version: 1.0.0
+cache_timeout: null
+certified_by: null
+certification_details: null
+query_context: null
+params:
+  viz_type: echarts_timeseries_bar
+  x_axis: brand
+  metrics:
+  - revenue
+  groupby: []
+  adhoc_filters:
+  - clause: WHERE
+    comparator: No filter
+    expressionType: SIMPLE
+    operator: TEMPORAL_RANGE
+    subject: event_time
+  - clause: WHERE
+    comparator: null
+    expressionType: SIMPLE
+    operator: IS NOT NULL
+    subject: brand
+  row_limit: 10
+  order_desc: true
+  x_axis_sort: revenue
+  x_axis_sort_asc: false
+  color_scheme: supersetColors
+  orientation: vertical
+  show_legend: false
+  show_value: true
+  rich_tooltip: true
+  y_axis_format: SMART_NUMBER
+  y_axis_bounds:
+  - null
+  - null
+  truncateXAxis: true
+  truncate_metric: true
+  annotation_layers: []
+  extra_form_data: {}

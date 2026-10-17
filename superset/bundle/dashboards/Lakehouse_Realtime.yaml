@@ -1,0 +1,199 @@
+# Dashboard realtime: đọc rt.events (Kafka -> ClickHouse, trễ vài giây), không qua Spark/dbt.
+# Mọi chart chỉ xét "hôm nay" theo đồng hồ phát lại (ngày của sự kiện mới nhất đã nhận).
+# Bố cục lưới 12 cột:
+#   dòng 1: 4 Big Number (mỗi ô rộng 3)
+#   dòng 2: sự kiện theo loại + doanh thu lũy kế (mỗi ô rộng 6)
+#   dòng 3: top thương hiệu + trạng thái luồng (mỗi ô rộng 6)
+dashboard_title: Lakehouse – Realtime
+description: null
+css: ''
+slug: lakehouse-realtime
+certified_by: ''
+certification_details: ''
+published: true
+uuid: 35e70470-0789-4482-9dd2-be1ba9204f58
+version: 1.0.0
+metadata:
+  # Tự chạy lại mọi chart mỗi 10 giây (cache dữ liệu của Superset đang tắt nên lần nào cũng hỏi ClickHouse).
+  # Kafka engine ghi vào rt.events mỗi 2 giây, nên số liệu trên màn hình chậm nhiều nhất khoảng 12 giây.
+  refresh_frequency: 10
+  timed_refresh_immune_slices: []
+  color_scheme: supersetColors
+  color_scheme_domain: []
+  label_colors: {}
+  map_label_colors: {}
+  shared_label_colors: []
+  cross_filters_enabled: false
+  chart_configuration: {}
+  global_chart_configuration: {}
+  native_filter_configuration: []
+  expanded_slices: {}
+  default_filters: '{}'
+position:
+  DASHBOARD_VERSION_KEY: v2
+  ROOT_ID:
+    id: ROOT_ID
+    type: ROOT
+    children:
+    - GRID_ID
+  GRID_ID:
+    id: GRID_ID
+    type: GRID
+    parents:
+    - ROOT_ID
+    children:
+    - ROW-kpi
+    - ROW-trend
+    - ROW-detail
+  HEADER_ID:
+    id: HEADER_ID
+    type: HEADER
+    meta:
+      text: Lakehouse – Realtime
+  ROW-kpi:
+    id: ROW-kpi
+    type: ROW
+    meta:
+      background: BACKGROUND_TRANSPARENT
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    children:
+    - CHART-rt-revenue
+    - CHART-rt-orders
+    - CHART-rt-events
+    - CHART-rt-users
+  ROW-trend:
+    id: ROW-trend
+    type: ROW
+    meta:
+      background: BACKGROUND_TRANSPARENT
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    children:
+    - CHART-rt-events-by-type
+    - CHART-rt-cumulative-revenue
+  ROW-detail:
+    id: ROW-detail
+    type: ROW
+    meta:
+      background: BACKGROUND_TRANSPARENT
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    children:
+    - CHART-rt-top-brands
+    - CHART-rt-stream-status
+  CHART-rt-revenue:
+    id: CHART-rt-revenue
+    type: CHART
+    children: []
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-kpi
+    meta:
+      chartId: 1
+      uuid: e4fa1d9b-4d2c-4ad9-a92b-33a86e7d6736
+      sliceName: Doanh thu hôm nay
+      width: 3
+      height: 30
+  CHART-rt-orders:
+    id: CHART-rt-orders
+    type: CHART
+    children: []
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-kpi
+    meta:
+      chartId: 2
+      uuid: a4d19305-46eb-4c4a-a8ea-3bd8b421fee5
+      sliceName: Số đơn hôm nay
+      width: 3
+      height: 30
+  CHART-rt-events:
+    id: CHART-rt-events
+    type: CHART
+    children: []
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-kpi
+    meta:
+      chartId: 3
+      uuid: 66c0ec46-8360-4d06-8019-5cbd69d426a7
+      sliceName: Sự kiện hôm nay
+      width: 3
+      height: 30
+  CHART-rt-users:
+    id: CHART-rt-users
+    type: CHART
+    children: []
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-kpi
+    meta:
+      chartId: 4
+      uuid: caba70f2-9379-442a-bb4a-ae5718c36959
+      sliceName: Người dùng hoạt động hôm nay
+      width: 3
+      height: 30
+  CHART-rt-events-by-type:
+    id: CHART-rt-events-by-type
+    type: CHART
+    children: []
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-trend
+    meta:
+      chartId: 5
+      uuid: 8eb6a163-1e9c-4b02-b53d-1c11fb9543fc
+      sliceName: Sự kiện theo loại (10 phút)
+      width: 6
+      height: 50
+  CHART-rt-cumulative-revenue:
+    id: CHART-rt-cumulative-revenue
+    type: CHART
+    children: []
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-trend
+    meta:
+      chartId: 6
+      uuid: 7f000791-92c5-4cce-b90d-86b6d5324b70
+      sliceName: Doanh thu lũy kế hôm nay
+      width: 6
+      height: 50
+  CHART-rt-top-brands:
+    id: CHART-rt-top-brands
+    type: CHART
+    children: []
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-detail
+    meta:
+      chartId: 7
+      uuid: 6ce9654b-8024-4741-9adc-5c0ba3d4c78f
+      sliceName: Top 10 thương hiệu hôm nay
+      width: 6
+      height: 50
+  CHART-rt-stream-status:
+    id: CHART-rt-stream-status
+    type: CHART
+    children: []
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-detail
+    meta:
+      chartId: 8
+      uuid: cf459c6a-0b77-4c79-b23c-bc58037515df
+      sliceName: Trạng thái luồng
+      width: 6
+      height: 50

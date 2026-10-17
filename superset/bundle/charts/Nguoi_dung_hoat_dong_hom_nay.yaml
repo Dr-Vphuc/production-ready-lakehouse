@@ -1,0 +1,27 @@
+# Big Number realtime: số người dùng có ít nhất một sự kiện trong ngày mới nhất,
+# metric `active_users` của dataset rt_events_today (như active_users của gold.daily_kpis).
+slice_name: Người dùng hoạt động hôm nay
+description: Số user_id khác nhau trong ngày mới nhất của rt.events.
+viz_type: big_number_total
+dataset_uuid: 8e57fd57-659d-4399-9435-72e1f8a774c7
+uuid: caba70f2-9379-442a-bb4a-ae5718c36959
+version: 1.0.0
+cache_timeout: null
+certified_by: null
+certification_details: null
+query_context: null
+params:
+  viz_type: big_number_total
+  metric: active_users
+  adhoc_filters:
+  - clause: WHERE
+    comparator: No filter
+    expressionType: SIMPLE
+    operator: TEMPORAL_RANGE
+    subject: event_time
+  header_font_size: 0.4
+  subheader_font_size: 0.15
+  y_axis_format: ',d'
+  time_format: smart_date
+  annotation_layers: []
+  extra_form_data: {}
